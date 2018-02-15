@@ -1,0 +1,42 @@
+# Install dependencies on all hosts
+- hosts: all
+  gather_facts: true
+  user: ubuntu
+  become: true
+  become_method: sudo
+  connection: ssh
+  roles:
+    - system_setup
+
+
+# Deploy the MYSQL container
+- hosts: db_servers
+  gather_facts: true
+  user: ubuntu
+  become: true
+  become_method: sudo
+  connection: ssh
+  roles:
+    - mysql
+
+# Deploy the wordpress container
+- hosts: app_servers
+  gather_facts: true
+  user: ubuntu
+  become: true
+  become_method: sudo
+  connection: ssh
+  roles:
+    - wordpress
+
+# Deploy the nginx container
+- hosts: proxy_servers
+  gather_facts: true
+  user: ubuntu
+  become: true
+  become_method: sudo
+  connection: ssh
+  vars:
+    app_servers_ips: "{{ groups['app_servers'] | map('extract', hostvars, ['ansible_host']) | list }}"
+  roles:
+    - nginx

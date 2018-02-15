@@ -1,0 +1,5 @@
+---
+project_name: wordpress
+db_master_password: changeme
+default_db: wordpress
+app_instances_per_host: 2

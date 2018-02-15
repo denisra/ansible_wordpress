@@ -1,0 +1,4 @@
+---
+docker_image: mysql:latest
+service_name: mysql
+persistent_volume: "/var/lib/{{ project_name }}/{{ service_name }}"

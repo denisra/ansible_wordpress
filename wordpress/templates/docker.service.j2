@@ -1,0 +1,10 @@
+[Unit]
+Description= {{ project_name }}_{{ service_name }}_{{ item }} service file
+Requires=docker.service
+After=docker.service
+[Service]
+Restart=always
+ExecStart=/usr/bin/docker start -a {{ project_name }}_{{ service_name }}_{{ item }}
+ExecStop=/usr/bin/docker stop -t 2 {{ project_name }}_{{ service_name }}_{{ item }}
+[Install]
+WantedBy=multi-user.target

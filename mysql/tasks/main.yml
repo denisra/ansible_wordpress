@@ -1,0 +1,59 @@
+---
+# tasks file for mysql
+- name: Fail if required variables are not defined
+  fail:
+    msg: "Variable '{{ item }}' is not defined"
+  when: item is undefined
+  with_items:
+    - "{{ project_name }}"
+    - "{{ docker_image }}"
+    - "{{ service_name }}"
+    - "{{ db_master_password }}"
+    - "{{ default_db }}"
+
+- name: Creates persistent volume
+  file:
+    path: "{{ persistent_volume }}"
+    state: directory
+  when: persistent_volume is defined
+
+- name: Configure docker service
+  docker_container:
+    state: started
+    name: "{{ project_name }}_{{ service_name }}"
+    image: "{{ docker_image }}"
+    ports:
+      - "3306:3306"
+    volumes:
+      - "{{ persistent_volume }}:/var/lib/mysql:Z"
+    env:
+      MYSQL_ROOT_PASSWORD="{{ db_master_password }}"
+      MYSQL_DATABASE="{{ default_db }}"
+  register: docker_create_output
+
+- name: Wait for service
+  wait_for:
+    port: 3306
+    delay: 10
+
+- name: Create DB
+  mysql_db:
+    name: "{{ default_db }}"
+    state: present
+    login_password: "{{ db_master_password }}"
+    login_host: "{{ hostvars['db1']['ansible_host'] }}"
+    login_port: 3306
+
+- name: Create docker systemd file
+  template:
+    src: templates/docker.service.j2
+    dest: "/etc/systemd/system/docker_{{ project_name }}_{{ service_name }}.service"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "start and enable docker {{ service_name }} service"
+  service:
+    name: "docker_{{ project_name }}_{{ service_name }}.service"
+    enabled: yes
+    state: started

@@ -1,0 +1,48 @@
+---
+# tasks file for wordpress
+- name: Fail if required variables are not defined
+  fail:
+    msg: "Variable '{{ item }}' is not defined"
+  when: item is undefined
+  with_items:
+    - "{{ project_name }}"
+    - "{{ docker_image }}"
+    - "{{ service_name }}"
+
+- name: Creates persistent volume
+  file:
+    path: "{{ persistent_volume }}"
+    state: directory
+  when: persistent_volume is defined
+
+- name: Configure docker service
+  docker_container:
+    state: started
+    name: "{{ project_name }}_{{service_name }}_{{ item }}"
+    image: "{{ docker_image }}"
+    ports:
+      - "800{{ item }}:80"
+    env:
+      WORDPRESS_DB_HOST="{{ hostvars['db1']['ansible_host'] }}"
+      WORDPRESS_DB_PORT=3306
+      WORDPRESS_DB_PASSWORD="{{ db_master_password }}"
+      WORDPRESS_DB_USER=root
+      WORDPRESS_DB_NAME="{{ default_db }}"
+  register: docker_create_output
+  with_sequence: count="{{ app_instances_per_host }}"
+
+- name: Create docker systemd file
+  template:
+    src: templates/docker.service.j2
+    dest: "/etc/systemd/system/docker_{{ project_name }}_{{service_name }}_{{ item }}.service"
+    owner: root
+    group: root
+    mode: 0644
+  with_sequence: count="{{ app_instances_per_host }}"
+
+- name: "start and enable docker {{ service_name }} service"
+  service:
+    name: "docker_{{ project_name }}_{{service_name }}_{{ item }}.service"
+    enabled: yes
+    state: started
+  with_sequence: count="{{ app_instances_per_host }}"

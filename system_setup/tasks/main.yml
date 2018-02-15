@@ -1,0 +1,27 @@
+---
+# tasks file for system_setup
+- name: Install dependencies on the host
+  package:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - git
+    - docker.io
+    - python3-pip
+    - mysql-client
+    - python-dev
+    - libmysqlclient-dev
+
+- name: Start and enable Docker
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Install python dependencies
+  pip:
+    name: "{{ item }}"
+  with_items:
+    - docker-py
+    - docker-compose
+    - MySQL-python

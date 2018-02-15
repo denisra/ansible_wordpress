@@ -1,0 +1,4 @@
+---
+docker_image: nginx:latest
+service_name: nginx
+persistent_volume: "/var/lib/{{ project_name }}/{{ service_name }}"
