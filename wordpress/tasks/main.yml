@@ -31,6 +31,12 @@
   register: docker_create_output
   with_sequence: count="{{ app_instances_per_host }}"
 
+- name: Wait for service
+  wait_for:
+    port: "800{{ item }}"
+    delay: 10
+  with_sequence: count="{{ app_instances_per_host }}"
+
 - name: Create docker systemd file
   template:
     src: templates/docker.service.j2
